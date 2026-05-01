@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bagman · Live BP Staking Tracker</title>
+<meta name="description" content="Real-time visualization of $BP staking on Backpack Exchange. Watch bagmen carry bags into the staking vault.">
+<meta property="og:title" content="Bagman · Live BP Staking Tracker">
+<meta property="og:description" content="Watch bagmen carry $BP into the staking vault, live.">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red-50: #fef2f2; --red-100: #fee2e2; --red-200: #fecaca; --red-300: #fca5a5;
+  --red-400: #f87171; --red-500: #ef4444; --red-600: #dc2626; --red-700: #b91c1c;
+  --red-800: #991b1b; --red-900: #7f1d1d;
+  --bg-darkest: #0a0303; --bg-darker: #150707; --bg-dark: #1f0a0a; --bg-card: #2a0e0e;
+  --green: #22c55e; --green-light: #4ade80; --gray: #9ca3af; --gold: #fbbf24;
+}
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  background: var(--bg-darkest); color: var(--red-50); min-height: 100vh; overflow-x: hidden;
+}
+body::before {
+  content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 20% 30%, rgba(220,38,38,0.15) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, rgba(127,29,29,0.2) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-logo {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--red-600), var(--red-800));
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(220,38,38,0.4);
+}
+.brand-text h1 { font-size: 24px; font-weight: 800; color: var(--red-50); margin-bottom: 2px; letter-spacing: -0.5px; }
+.brand-text p { font-size: 12px; color: var(--red-300); letter-spacing: 0.5px; }
+.live-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.4);
+  padding: 8px 14px; border-radius: 20px; font-size: 12px; color: var(--red-300);
+}
+.pulse {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--red-500);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+  50% { opacity: 0.4; box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+}
+.main-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 24px; margin-bottom: 24px; }
+@media (max-width: 1000px) { .main-grid { grid-template-columns: 1fr; } }
+.stage {
+  position: relative; height: 700px;
+  background: linear-gradient(180deg, var(--bg-darker) 0%, var(--bg-dark) 60%, var(--bg-card) 100%);
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid rgba(220,38,38,0.3);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.stage::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 250px;
+  background: radial-gradient(ellipse at center top, rgba(239,68,68,0.12), transparent 70%);
+  pointer-events: none;
+}
+.stage-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 70px;
+  background: linear-gradient(180deg, #4a1818 0%, #2a0a0a 100%);
+  border-top: 3px solid #6d2424;
+}
+.stage-floor::after {
+  content: ''; position: absolute; top: 10px; left: 0; right: 0; height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(220,38,38,0.2) 0 14px, transparent 14px 28px);
+}
+.hero-block {
+  position: absolute; top: 24px; left: 24px; z-index: 10; max-width: 60%;
+}
+.hero-num {
+  font-size: 44px; font-weight: 900; color: var(--red-300);
+  line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -1px;
+  text-shadow: 0 4px 24px rgba(220,38,38,0.5);
+  transition: color 0.4s, transform 0.4s;
+}
+.hero-num.flash { color: var(--green-light); transform: scale(1.04); text-shadow: 0 4px 24px rgba(74,222,128,0.6); }
+.hero-num.flash-down { color: var(--red-400); transform: scale(0.97); }
+.hero-label { font-size: 11px; color: var(--red-300); margin-top: 6px; letter-spacing: 2px; font-weight: 700; }
+.pct-badge {
+  display: inline-block; margin-top: 10px;
+  background: rgba(220,38,38,0.2); border: 1.5px solid rgba(220,38,38,0.4);
+  border-radius: 16px; padding: 6px 16px;
+  font-size: 16px; font-weight: 800; color: var(--red-300);
+  font-variant-numeric: tabular-nums; transition: all 0.4s;
+}
+.pct-badge.flash { background: rgba(74,222,128,0.2); border-color: rgba(74,222,128,0.5); color: var(--green-light); }
+.session-card {
+  position: absolute; top: 24px; right: 24px; z-index: 10;
+  background: rgba(0,0,0,0.5); border: 1px solid rgba(220,38,38,0.3);
+  border-radius: 12px; padding: 12px 16px; min-width: 170px; backdrop-filter: blur(8px);
+}
+.session-card .row { display: flex; justify-content: space-between; font-size: 11px; color: var(--red-300); margin-bottom: 5px; gap: 12px; }
+.session-card .row:last-child { margin-bottom: 0; }
+.session-card strong { color: var(--red-50); font-weight: 800; font-size: 13px; }
+
+.source-area {
+  position: absolute; bottom: 70px; left: 24px; width: 140px; height: 220px; z-index: 2;
+}
+.source-pile { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 110px; height: 100px; }
+.source-pile svg { position: absolute; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+.source-label {
+  position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--red-300); opacity: 0.85; white-space: nowrap;
+  letter-spacing: 1.5px; font-weight: 700;
+}
+
+.vault-container {
+  position: absolute; right: 28px; bottom: 70px; z-index: 3;
+  width: 280px; height: 580px;
+}
+.vault-pct-display {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--red-600), var(--red-800));
+  padding: 8px 18px; border-radius: 20px; z-index: 5;
+  box-shadow: 0 4px 20px rgba(220,38,38,0.5);
+  font-size: 18px; font-weight: 900; color: var(--red-50);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
+  transition: transform 0.4s, background 0.4s;
+}
+.vault-pct-display.flash { transform: translateX(-50%) scale(1.08); background: linear-gradient(135deg, var(--green), var(--green-light)); }
+.vault {
+  position: absolute; top: 30px; left: 0; right: 0; bottom: 32px;
+  background: linear-gradient(180deg, #1a0606 0%, #2a0e0e 100%);
+  border: 5px solid #6d2424; border-radius: 14px;
+  overflow: hidden; box-shadow: 0 0 30px rgba(220,38,38,0.4), inset 0 4px 20px rgba(0,0,0,0.6);
+}
+.vault::before {
+  content: ''; position: absolute; top: 12px; left: 12px; right: 12px; bottom: 12px;
+  border: 1.5px dashed rgba(252,165,165,0.2); border-radius: 8px; pointer-events: none; z-index: 4;
+}
+.vault-fill-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, rgba(74,222,128,0.08) 0%, rgba(220,38,38,0.18) 100%);
+  height: 0%; transition: height 1.2s cubic-bezier(0.34, 1.0, 0.64, 1);
+  z-index: 1;
+}
+.vault-fill-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--green-light), transparent);
+  bottom: 0%; transition: bottom 1.2s cubic-bezier(0.34, 1.0, 0.64, 1);
+  z-index: 3; opacity: 0.8;
+  box-shadow: 0 0 10px rgba(74,222,128,0.6);
+}
+.vault-bags {
+  position: absolute; bottom: 8px; left: 8px; right: 8px;
+  display: flex; flex-direction: column-reverse; flex-wrap: wrap-reverse;
+  align-items: flex-start; max-height: calc(100% - 16px); z-index: 2;
+  pointer-events: none;
+}
+.vault-bag {
+  width: 50px; height: 45px; margin: 0 -4px -8px 0;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+  animation: vbagDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes vbagDrop {
+  0% { transform: translateY(-30px) scale(0.6); opacity: 0; }
+  60% { transform: translateY(4px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.vault-bag.removing { animation: vbagOut 0.4s ease-out forwards; }
+@keyframes vbagOut {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-15px) scale(0.6); opacity: 0; }
+}
+.vault-scale {
+  position: absolute; right: -36px; top: 0; bottom: 0;
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-size: 10px; color: var(--red-300); opacity: 0.6; padding: 4px 0;
+  font-variant-numeric: tabular-nums; font-weight: 600;
+}
+.vault-scale span { line-height: 1; }
+.vault-label {
+  position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--red-300); letter-spacing: 2px; font-weight: 700;
+  white-space: nowrap;
+}
+
+.porter {
+  position: absolute; bottom: 70px; height: 110px;
+  animation: porterWalk var(--dur, 3s) linear forwards;
+  z-index: 5;
+}
+@keyframes porterWalk {
+  0% { left: 145px; }
+  100% { left: calc(100% - 320px); }
+}
+.porter.gone { animation: porterFade 0.5s forwards; }
+@keyframes porterFade {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6) translateY(20px); }
+}
+.porter-bob { animation: porterBob 0.32s ease-in-out infinite; position: relative; height: 100%; }
+@keyframes porterBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.leg-f { transform-origin: 7px 0; animation: stepF 0.32s linear infinite; }
+.leg-b { transform-origin: 7px 0; animation: stepB 0.32s linear infinite; }
+@keyframes stepF { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-25deg); } 75% { transform: rotate(20deg); } }
+@keyframes stepB { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(20deg); } 75% { transform: rotate(-25deg); } }
+.porter-amount {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 12px; font-weight: 800; color: var(--green-light);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  padding: 3px 10px; background: rgba(0,0,0,0.6); border-radius: 12px;
+  border: 1px solid rgba(74,222,128,0.4);
+}
+.porter-amount.mega {
+  color: var(--red-50); background: linear-gradient(90deg, var(--red-600), var(--red-400));
+  border-color: var(--red-200); font-size: 13px;
+}
+
+.confetti {
+  position: absolute; width: 10px; height: 14px; pointer-events: none;
+  animation: confettiFall 2.4s linear forwards; z-index: 30;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  100% { transform: translateY(720px) rotate(720deg); opacity: 0; }
+}
+
+.side-panel { display: flex; flex-direction: column; gap: 16px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat-card {
+  background: var(--bg-card); border: 1px solid rgba(220,38,38,0.25);
+  border-radius: 12px; padding: 14px 16px; position: relative; overflow: hidden;
+}
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--red-600); }
+.stat-label { font-size: 10px; color: var(--red-300); margin-bottom: 6px; letter-spacing: 1px; font-weight: 600; }
+.stat-value { font-size: 22px; font-weight: 800; color: var(--red-50); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 11px; color: var(--gray); margin-top: 4px; }
+
+.feed-card {
+  background: var(--bg-card); border: 1px solid rgba(220,38,38,0.25);
+  border-radius: 12px; padding: 16px; flex: 1; display: flex; flex-direction: column; min-height: 360px;
+}
+.feed-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(220,38,38,0.2);
+}
+.feed-header h3 { font-size: 13px; font-weight: 700; color: var(--red-50); letter-spacing: 0.5px; }
+.feed-header span { font-size: 11px; color: var(--red-300); }
+.feed { flex: 1; overflow-y: auto; max-height: 460px; padding-right: 4px; }
+.feed::-webkit-scrollbar { width: 4px; }
+.feed::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.4); border-radius: 2px; }
+.feed-empty { text-align: center; padding: 30px 10px; color: var(--gray); font-size: 12px; }
+.event {
+  background: rgba(74,222,128,0.08); border-left: 3px solid var(--green);
+  padding: 10px 12px; margin-bottom: 6px; border-radius: 6px; font-size: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  animation: slideIn 0.5s ease-out;
+}
+.event.unstake { background: rgba(248,113,113,0.08); border-left-color: var(--red-500); }
+@keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.event-amount { font-weight: 800; color: var(--green-light); }
+.event-amount.neg { color: var(--red-400); }
+.event-type { font-size: 10px; opacity: 0.7; margin-left: 6px; }
+.event-time { font-size: 10px; color: var(--gray); }
+
+.bottom-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+@media (max-width: 1000px) { .bottom-grid { grid-template-columns: 1fr; } }
+.chart-card {
+  background: var(--bg-card); border: 1px solid rgba(220,38,38,0.25);
+  border-radius: 12px; padding: 20px;
+}
+.chart-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.chart-header h3 { font-size: 14px; font-weight: 700; color: var(--red-50); letter-spacing: 0.5px; }
+.chart-tabs { display: flex; gap: 6px; }
+.chart-tab {
+  background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3);
+  border-radius: 6px; padding: 5px 12px; font-size: 11px; color: var(--red-300);
+  cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 600;
+}
+.chart-tab:hover { background: rgba(220,38,38,0.2); }
+.chart-tab.active { background: var(--red-600); color: var(--red-50); border-color: var(--red-600); }
+.chart-wrap { position: relative; width: 100%; height: 240px; }
+
+.equity-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(127,29,29,0.4) 100%);
+  border: 1px solid rgba(220,38,38,0.4); border-radius: 12px; padding: 20px;
+}
+.equity-card h3 { font-size: 14px; font-weight: 700; color: var(--red-50); margin-bottom: 12px; letter-spacing: 0.5px; }
+.dday { font-size: 48px; font-weight: 900; color: var(--red-300); line-height: 1; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.dday-sub { font-size: 12px; color: var(--gray); margin-bottom: 16px; }
+.progress-bar { background: rgba(0,0,0,0.4); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.progress-fill { background: linear-gradient(90deg, var(--red-600), var(--red-400)); height: 100%; transition: width 0.5s ease-out; }
+.equity-info { font-size: 11px; color: var(--gray); line-height: 1.6; }
+.equity-info strong { color: var(--red-300); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="32" height="32" viewBox="0 0 60 56">
+          <rect x="14" y="2" width="6" height="14" rx="2" fill="#fee2e2"/>
+          <rect x="40" y="2" width="6" height="14" rx="2" fill="#fee2e2"/>
+          <rect x="6" y="12" width="48" height="40" rx="6" fill="#fee2e2"/>
+          <rect x="14" y="28" width="32" height="18" rx="4" fill="#dc2626"/>
+          <text x="30" y="40" text-anchor="middle" fill="#fee2e2" font-size="9" font-weight="700">BP</text>
+          <rect x="6" y="12" width="48" height="6" rx="3" fill="#fee2e2"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>BAGMAN</h1>
+        <p>LIVE BP STAKING TRACKER · BACKPACK EXCHANGE</p>
+      </div>
+    </div>
+    <div class="live-badge">
+      <span class="pulse"></span>
+      <span id="status-text">Connecting...</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <div class="stage" id="stage">
+      <div class="hero-block">
+        <div class="hero-num" id="hero-total">—</div>
+        <div class="hero-label">TOTAL STAKED BP</div>
+      </div>
+      <div class="session-card">
+        <div class="row"><span>SESSION</span><strong id="session-add">+0 BP</strong></div>
+        <div class="row"><span>EVENTS</span><strong id="session-events">0</strong></div>
+        <div class="row"><span>DELIVERED</span><strong id="session-bags">0</strong></div>
+      </div>
+
+      <div class="stage-floor"></div>
+
+      <div class="source-area">
+        <div class="source-pile" id="source-pile"></div>
+        <div class="source-label">AVAILABLE BP</div>
+      </div>
+
+      <div class="vault-container">
+        <div class="vault-pct-display" id="vault-pct">—%</div>
+        <div class="vault">
+          <div class="vault-scale">
+            <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
+          </div>
+          <div class="vault-fill-bar" id="vault-fill-bar"></div>
+          <div class="vault-fill-line" id="vault-fill-line"></div>
+          <div class="vault-bags" id="vault-bags"></div>
+        </div>
+        <div class="vault-label">STAKING POOL</div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">PRICE</div>
+          <div class="stat-value" id="bp-price">—</div>
+          <div class="stat-sub" id="bp-change">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">24H VOLUME</div>
+          <div class="stat-value" id="bp-volume">—</div>
+          <div class="stat-sub" id="bp-trades-24h">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">MARKET CAP</div>
+          <div class="stat-value" id="bp-mcap">—</div>
+          <div class="stat-sub">CIRC. 250M BP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">STAKED VALUE</div>
+          <div class="stat-value" id="staked-value">—</div>
+          <div class="stat-sub">TOTAL LOCKED USD</div>
+        </div>
+      </div>
+
+      <div class="feed-card">
+        <div class="feed-header">
+          <h3>LIVE STAKING EVENTS</h3>
+          <span id="feed-status">Waiting...</span>
+        </div>
+        <div class="feed" id="feed">
+          <div class="feed-empty">Staking changes will appear here as they happen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 id="chart-title">24H PRICE</h3>
+        <div class="chart-tabs">
+          <button class="chart-tab active" data-mode="price">Price</button>
+          <button class="chart-tab" data-mode="staking">Session Staking</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="mainChart" role="img" aria-label="BP chart"></canvas>
+      </div>
+    </div>
+
+    <div class="equity-card">
+      <h3>EQUITY CONVERSION COUNTDOWN</h3>
+      <div class="dday" id="equity-dday">D-—</div>
+      <div class="dday-sub" id="equity-elapsed">—</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="equity-progress" style="width: 0%;"></div>
+      </div>
+      <div class="equity-info">
+        TGE <strong>2026-03-23</strong> → eligible <strong>2027-03-23</strong><br>
+        After 1-year lockup, exchange BP for up to <strong>20%</strong> Backpack equity
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  const CIRC = 250000000;
+  const TGE = new Date('2026-03-23T00:00:00Z').getTime();
+  const EQUITY = new Date('2027-03-23T00:00:00Z').getTime();
+  const TOTAL_DURATION = EQUITY - TGE;
+  const VAULT_MAX_BAGS = 60;
+  const PORTER_WALK_MS = 3000;
+
+  const state = {
+    lastTotal: null, sessionAdd: 0, sessionEvents: 0, deliveries: 0,
+    currentPrice: null, chart: null, chartMode: 'price',
+    priceData: null, stakingHistory: [], visibleBags: 0,
+    maxFeed: 30
+  };
+
+  const bagSvg = `<svg viewBox="0 0 60 56" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="40" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="6" y="12" width="48" height="40" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="14" y="28" width="32" height="18" rx="4" fill="#991b1b"/><text x="30" y="40" text-anchor="middle" fill="#fef2f2" font-size="8" font-weight="700">BP</text><rect x="6" y="12" width="48" height="6" rx="3" fill="#7f1d1d"/></svg>`;
+
+  const sourceBagSvg = `<svg viewBox="0 0 60 56"><rect x="14" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="40" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="6" y="12" width="48" height="40" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="14" y="28" width="32" height="18" rx="4" fill="#991b1b"/><text x="30" y="40" text-anchor="middle" fill="#fef2f2" font-size="8" font-weight="700">BP</text><rect x="6" y="12" width="48" height="6" rx="3" fill="#7f1d1d"/></svg>`;
+
+  function fmtMoney(n){
+    if(n==null||isNaN(n)) return '—';
+    if(n>=1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+    if(n>=1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+    if(n>=1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+    return '$' + Number(n).toFixed(4);
+  }
+  function fmtNum(n){ if(n==null||isNaN(n)) return '—'; return new Intl.NumberFormat('en-US').format(Math.round(n)); }
+  function fmtCompact(n){
+    const a = Math.abs(n);
+    if(a>=1e6) return (n/1e6).toFixed(2)+'M';
+    if(a>=1e3) return (n/1e3).toFixed(1)+'K';
+    return Math.round(n).toString();
+  }
+  function fmtTime(ts){ return new Date(ts).toLocaleTimeString('en-US', { hour12: false }); }
+
+  function buildSourcePile(){
+    const pile = document.getElementById('source-pile');
+    const positions = [
+      [0, 0], [32, 0], [64, 0],
+      [16, 22], [48, 22],
+      [32, 44]
+    ];
+    pile.innerHTML = positions.map(([x, y]) => `<svg style="left:${x}px; bottom:${y}px; width:36px; height:32px; position:absolute;" viewBox="0 0 60 56">${sourceBagSvg.replace(/<svg[^>]*>|<\/svg>/g, '')}</svg>`).join('');
+  }
+
+  function dropConfetti(count){
+    const stage = document.getElementById('stage');
+    const colors = ['#dc2626','#fca5a5','#fef2f2','#7f1d1d','#ef4444','#fbbf24'];
+    for(let i = 0; i < count; i++){
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.right = (10 + Math.random()*280) + 'px';
+      c.style.top = '40px';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      c.style.animationDelay = (Math.random()*0.5) + 's';
+      stage.appendChild(c);
+      setTimeout(() => c.remove(), 2900);
+    }
+  }
+
+  function updateVaultFill(pct){
+    const targetBags = Math.round(VAULT_MAX_BAGS * pct / 100);
+    const bagsContainer = document.getElementById('vault-bags');
+    const fillBar = document.getElementById('vault-fill-bar');
+    const fillLine = document.getElementById('vault-fill-line');
+    const pctDisplay = document.getElementById('vault-pct');
+
+    fillBar.style.height = pct + '%';
+    fillLine.style.bottom = pct + '%';
+    pctDisplay.textContent = pct.toFixed(2) + '%';
+
+    if (targetBags > state.visibleBags){
+      const toAdd = targetBags - state.visibleBags;
+      for (let i = 0; i < toAdd; i++){
+        const bag = document.createElement('div');
+        bag.className = 'vault-bag';
+        bag.innerHTML = bagSvg;
+        bag.style.animationDelay = (i * 0.05) + 's';
+        bagsContainer.insertBefore(bag, bagsContainer.firstChild);
+      }
+    } else if (targetBags < state.visibleBags){
+      const toRemove = state.visibleBags - targetBags;
+      for (let i = 0; i < toRemove; i++){
+        const first = bagsContainer.firstChild;
+        if (!first) break;
+        first.classList.add('removing');
+        setTimeout(((el) => () => { if (el.parentNode) el.parentNode.removeChild(el); })(first), 400);
+        bagsContainer.removeChild(first);
+        const placeholder = document.createElement('div');
+        placeholder.className = 'vault-bag removing';
+        placeholder.innerHTML = bagSvg;
+        bagsContainer.insertBefore(placeholder, bagsContainer.firstChild);
+        setTimeout(((el) => () => { if (el.parentNode) el.parentNode.removeChild(el); })(placeholder), 400);
+      }
+    }
+    state.visibleBags = targetBags;
+  }
+
+  function porterSvg(){
+    return `<div class="porter-bob"><svg width="92" height="110" viewBox="0 0 100 130" style="overflow:visible;">
+      <rect class="leg-b" x="40" y="100" width="11" height="24" rx="3" fill="#7f1d1d"/>
+      <ellipse cx="45" cy="125" rx="9" ry="3" fill="#1a0606"/>
+      <g><rect x="18" y="48" width="36" height="46" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="20" y="42" width="5" height="12" rx="1.5" fill="#7f1d1d"/><rect x="22" y="68" width="28" height="18" rx="3" fill="#991b1b"/><text x="36" y="82" text-anchor="middle" fill="#fef2f2" font-size="11" font-weight="700">BP</text><rect x="18" y="48" width="36" height="6" rx="3" fill="#7f1d1d"/></g>
+      <ellipse cx="58" cy="80" rx="22" ry="26" fill="#dc2626"/>
+      <ellipse cx="58" cy="80" rx="14" ry="18" fill="#ef4444" opacity="0.45"/>
+      <path d="M 50 38 L 70 38 L 64 60 L 56 60 Z" fill="#7f1d1d" opacity="0.7"/>
+      <path d="M 52 60 Q 56 65 60 78" stroke="#7f1d1d" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <circle cx="62" cy="38" r="22" fill="#fca5a5"/>
+      <circle cx="62" cy="34" r="22" fill="#fecaca" opacity="0.45"/>
+      <circle cx="48" cy="38" r="4" fill="#fca5a5"/>
+      <ellipse cx="70" cy="40" rx="3.5" ry="5" fill="#1f1010"/>
+      <circle cx="71" cy="38" r="1.3" fill="#fff"/>
+      <circle cx="76" cy="48" r="3" fill="#ef4444" opacity="0.6"/>
+      <path d="M 72 50 Q 76 54 78 50" stroke="#1f1010" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M 65 70 Q 78 78 72 95" stroke="#fca5a5" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <circle cx="72" cy="95" r="6" fill="#fca5a5"/>
+      <rect class="leg-f" x="56" y="100" width="11" height="24" rx="3" fill="#7f1d1d"/>
+      <ellipse cx="61" cy="125" rx="9" ry="3" fill="#1a0606"/>
+    </svg></div>`;
+  }
+
+  function spawnPorter(amount){
+    const stage = document.getElementById('stage');
+    const porter = document.createElement('div');
+    porter.className = 'porter';
+    porter.style.setProperty('--dur', PORTER_WALK_MS + 'ms');
+    const labelClass = amount >= 500000 ? 'porter-amount mega' : 'porter-amount';
+    porter.innerHTML = porterSvg() + `<div class="${labelClass}">+${fmtCompact(amount)} BP</div>`;
+    stage.appendChild(porter);
+    setTimeout(() => {
+      state.deliveries++;
+      document.getElementById('session-bags').textContent = state.deliveries.toLocaleString('en-US');
+      porter.classList.add('gone');
+      if (amount >= 500000) dropConfetti(60);
+      setTimeout(() => porter.remove(), 500);
+    }, PORTER_WALK_MS);
+  }
+
+  function addEvent(delta, isStake){
+    const feed = document.getElementById('feed');
+    if (state.sessionEvents === 0) feed.innerHTML = '';
+    const item = document.createElement('div');
+    item.className = 'event' + (isStake ? '' : ' unstake');
+    const sign = isStake ? '+' : '−';
+    const usdValue = state.currentPrice ? Math.abs(delta) * state.currentPrice : 0;
+    item.innerHTML = `<span><span class="event-amount ${isStake?'':'neg'}">${sign}${fmtNum(Math.abs(delta))} BP</span><span class="event-type">${isStake?'STAKE':'UNSTAKE'}${usdValue ? ' (≈$' + usdValue.toFixed(2) + ')' : ''}</span></span><span class="event-time">${fmtTime(Date.now())}</span>`;
+    feed.insertBefore(item, feed.firstChild);
+    while (feed.children.length > state.maxFeed) feed.removeChild(feed.lastChild);
+
+    state.sessionEvents++;
+    document.getElementById('session-events').textContent = state.sessionEvents.toLocaleString('en-US');
+    document.getElementById('feed-status').textContent = 'Active';
+  }
+
+  function flashHero(isUp){
+    const hero = document.getElementById('hero-total');
+    const pct = document.getElementById('vault-pct');
+    const cls = isUp ? 'flash' : 'flash-down';
+    hero.classList.add(cls);
+    if (isUp) pct.classList.add('flash');
+    setTimeout(() => { hero.classList.remove(cls); pct.classList.remove('flash'); }, 700);
+  }
+
+  async function fetchStaking(){
+    try {
+      const r = await fetch('https://api.backpack.exchange/wapi/v1/staking/stats');
+      if (!r.ok) throw new Error();
+      const data = await r.json();
+      const total = parseFloat(data.totalStakedBp);
+      const pct = (total / CIRC * 100);
+
+      document.getElementById('hero-total').textContent = fmtNum(total) + ' BP';
+      updateVaultFill(pct);
+
+      if (state.currentPrice){
+        document.getElementById('staked-value').textContent = fmtMoney(total * state.currentPrice);
+      }
+
+      state.stakingHistory.push({ t: Date.now(), v: total });
+      if (state.stakingHistory.length > 200) state.stakingHistory.shift();
+
+      if (state.lastTotal !== null){
+        const delta = total - state.lastTotal;
+        if (Math.abs(delta) >= 0.01){
+          if (delta > 0){
+            state.sessionAdd += delta;
+            document.getElementById('session-add').textContent = '+' + fmtNum(state.sessionAdd) + ' BP';
+            spawnPorter(delta);
+            addEvent(delta, true);
+            flashHero(true);
+          } else {
+            addEvent(delta, false);
+            flashHero(false);
+          }
+          if (state.chartMode === 'staking') renderChart();
+        }
+      }
+      state.lastTotal = total;
+      document.getElementById('status-text').textContent = 'Connected · ' + new Date().toLocaleTimeString('en-US', { hour12: false });
+    } catch(e){
+      document.getElementById('status-text').textContent = 'Retrying...';
+    }
+  }
+
+  async function fetchTicker(){
+    try {
+      const r = await fetch('https://api.backpack.exchange/api/v1/ticker?symbol=BP_USDC');
+      if (!r.ok) return;
+      const t = await r.json();
+      const price = parseFloat(t.lastPrice);
+      const open = parseFloat(t.firstPrice || price);
+      const change = open ? ((price - open) / open * 100) : 0;
+      const vol = parseFloat(t.quoteVolume || 0);
+      const trades24h = parseInt(t.trades || 0);
+
+      state.currentPrice = price;
+
+      document.getElementById('bp-price').textContent = '$' + price.toFixed(4);
+      const cEl = document.getElementById('bp-change');
+      cEl.textContent = (change >= 0 ? '▲ +' : '▼ ') + change.toFixed(2) + '%';
+      cEl.style.color = change >= 0 ? 'var(--green-light)' : 'var(--red-400)';
+      document.getElementById('bp-volume').textContent = fmtMoney(vol);
+      document.getElementById('bp-trades-24h').textContent = fmtNum(trades24h) + ' trades';
+      document.getElementById('bp-mcap').textContent = fmtMoney(price * CIRC);
+      if (state.lastTotal){
+        document.getElementById('staked-value').textContent = fmtMoney(state.lastTotal * price);
+      }
+    } catch(e){}
+  }
+
+  async function fetchPriceChart(){
+    try {
+      const startSec = Math.floor((Date.now() - 24*60*60*1000) / 1000);
+      let r = await fetch('https://api.backpack.exchange/api/v1/klines?symbol=BP_USDC&interval=1h&startTime=' + startSec);
+      let klines = r.ok ? await r.json() : null;
+      if (!klines || !klines.length){
+        const startMs = Date.now() - 24*60*60*1000;
+        r = await fetch('https://api.backpack.exchange/api/v1/klines?symbol=BP_USDC&interval=1h&startTime=' + startMs);
+        klines = r.ok ? await r.json() : [];
+      }
+      if (!klines.length) return;
+      state.priceData = {
+        labels: klines.map(k => {
+          const t = k.start || k[0];
+          const d = new Date(typeof t === 'string' ? t : t * 1000);
+          return d.getHours().toString().padStart(2,'0') + ':00';
+        }),
+        prices: klines.map(k => parseFloat(k.close || k[4]))
+      };
+      if (state.chartMode === 'price') renderChart();
+    } catch(e){}
+  }
+
+  function renderChart(){
+    const ctx = document.getElementById('mainChart');
+    if (state.chart) state.chart.destroy();
+    let labels, data, label, color, fillColor, ylabel;
+    if (state.chartMode === 'price'){
+      if (!state.priceData) return;
+      labels = state.priceData.labels;
+      data = state.priceData.prices;
+      label = 'BP/USDC';
+      color = '#dc2626'; fillColor = 'rgba(220,38,38,0.15)';
+      ylabel = v => '$' + v.toFixed(3);
+      document.getElementById('chart-title').textContent = '24H PRICE';
+    } else {
+      labels = state.stakingHistory.map(p => fmtTime(p.t));
+      data = state.stakingHistory.map(p => p.v);
+      label = 'TOTAL STAKED BP';
+      color = '#22c55e'; fillColor = 'rgba(34,197,94,0.15)';
+      ylabel = v => fmtCompact(v);
+      document.getElementById('chart-title').textContent = 'SESSION STAKING TREND';
+    }
+    state.chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label, data, borderColor: color, backgroundColor: fillColor, fill: true, tension: 0.35, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2.5 }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { backgroundColor: '#1f0a0a', titleColor: '#fef2f2', bodyColor: '#fef2f2', borderColor: color, borderWidth: 1, callbacks: { label: c => state.chartMode === 'price' ? '$' + c.parsed.y.toFixed(4) : fmtNum(c.parsed.y) + ' BP' } }
+        },
+        scales: {
+          y: { grid: { color: 'rgba(220,38,38,0.08)' }, ticks: { color: '#fca5a5', font: { size: 11 }, callback: ylabel } },
+          x: { grid: { display: false }, ticks: { color: '#fca5a5', font: { size: 11 }, maxTicksLimit: 10 } }
+        }
+      }
+    });
+  }
+
+  function setupChartTabs(){
+    document.querySelectorAll('.chart-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.chartMode = tab.dataset.mode;
+        renderChart();
+      });
+    });
+  }
+
+  function updateCountdown(){
+    const now = Date.now();
+    const remainDays = Math.max(0, Math.ceil((EQUITY - now) / (1000*60*60*24)));
+    const elapsedDays = Math.max(0, Math.floor((now - TGE) / (1000*60*60*24)));
+    const progress = Math.min(100, ((now - TGE) / TOTAL_DURATION) * 100);
+    document.getElementById('equity-dday').textContent = 'D-' + remainDays.toLocaleString('en-US');
+    document.getElementById('equity-elapsed').textContent = elapsedDays + ' days since TGE · ' + progress.toFixed(1) + '% progress';
+    document.getElementById('equity-progress').style.width = Math.max(0.5, progress) + '%';
+  }
+
+  function init(){
+    buildSourcePile();
+    setupChartTabs();
+    fetchStaking();
+    fetchTicker();
+    fetchPriceChart();
+    updateCountdown();
+    setInterval(fetchStaking, 3000);
+    setInterval(fetchTicker, 30000);
+    setInterval(fetchPriceChart, 120000);
+    setInterval(updateCountdown, 60000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+</body>
+</html>
