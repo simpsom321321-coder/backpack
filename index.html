@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bagman · Live BP Staking Tracker</title>
-<meta name="description" content="Real-time visualization of $BP staking on Backpack Exchange. Watch bagmen carry bags into the staking vault.">
+<meta name="description" content="Real-time visualization of $BP staking on Backpack Exchange. Watch chihuahuas carry bags into the staking vault.">
 <meta property="og:title" content="Bagman · Live BP Staking Tracker">
-<meta property="og:description" content="Watch bagmen carry $BP into the staking vault, live.">
+<meta property="og:description" content="Watch chihuahuas carry $BP into the staking vault, live.">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -109,18 +109,8 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   position: absolute; right: 28px; bottom: 70px; z-index: 3;
   width: 280px; height: 580px;
 }
-.vault-pct-display {
-  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
-  background: linear-gradient(135deg, var(--red-600), var(--red-800));
-  padding: 8px 18px; border-radius: 20px; z-index: 5;
-  box-shadow: 0 4px 20px rgba(220,38,38,0.5);
-  font-size: 18px; font-weight: 900; color: var(--red-50);
-  font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
-  transition: transform 0.4s, background 0.4s;
-}
-.vault-pct-display.flash { transform: translateX(-50%) scale(1.08); background: linear-gradient(135deg, var(--green), var(--green-light)); }
 .vault {
-  position: absolute; top: 30px; left: 0; right: 0; bottom: 32px;
+  position: absolute; top: 8px; left: 0; right: 0; bottom: 32px;
   background: linear-gradient(180deg, #1a0606 0%, #2a0e0e 100%);
   border: 5px solid #6d2424; border-radius: 14px;
   overflow: hidden; box-shadow: 0 0 30px rgba(220,38,38,0.4), inset 0 4px 20px rgba(0,0,0,0.6);
@@ -152,9 +142,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   width: 50px; height: 45px; margin: 0 -4px -8px 0;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
 }
-.vault-bag.dropped {
-  animation: vbagDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+.vault-bag.dropped { animation: vbagDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
 @keyframes vbagDrop {
   0% { transform: translateY(-30px) scale(0.6); opacity: 0; }
   60% { transform: translateY(4px) scale(1.05); opacity: 1; }
@@ -169,32 +157,37 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .vault-scale span { line-height: 1; }
 .vault-label {
   position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
-  font-size: 11px; color: var(--red-300); letter-spacing: 2px; font-weight: 700;
+  font-size: 12px; color: var(--red-300); letter-spacing: 1.5px; font-weight: 700;
   white-space: nowrap;
 }
+.vault-label .vault-pct {
+  color: var(--red-50); font-weight: 800; margin-left: 8px;
+  font-variant-numeric: tabular-nums; transition: color 0.4s;
+}
+.vault-label .vault-pct.flash { color: var(--green-light); }
 
 .porter {
-  position: absolute; bottom: 70px; height: 110px;
+  position: absolute; bottom: 70px; height: 90px;
   animation: porterWalk var(--dur, 3s) linear forwards;
   z-index: 5;
 }
 @keyframes porterWalk {
   0% { left: 145px; }
-  100% { left: calc(100% - 320px); }
+  100% { left: calc(100% - 360px); }
 }
 .porter.gone { animation: porterFade 0.5s forwards; }
 @keyframes porterFade {
   0% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.6) translateY(20px); }
+  100% { opacity: 0; transform: scale(0.7) translateY(15px); }
 }
-.porter-bob { animation: porterBob 0.32s ease-in-out infinite; position: relative; height: 100%; }
-@keyframes porterBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-.leg-f { transform-origin: 7px 0; animation: stepF 0.32s linear infinite; }
-.leg-b { transform-origin: 7px 0; animation: stepB 0.32s linear infinite; }
-@keyframes stepF { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-25deg); } 75% { transform: rotate(20deg); } }
-@keyframes stepB { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(20deg); } 75% { transform: rotate(-25deg); } }
+.porter-bob { animation: porterBob 0.3s ease-in-out infinite; position: relative; height: 100%; }
+@keyframes porterBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+.leg-f { transform-origin: 6px 0; animation: stepF 0.3s linear infinite; }
+.leg-b { transform-origin: 6px 0; animation: stepB 0.3s linear infinite; }
+@keyframes stepF { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-22deg); } 75% { transform: rotate(18deg); } }
+@keyframes stepB { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(18deg); } 75% { transform: rotate(-22deg); } }
 .porter-amount {
-  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
   white-space: nowrap; font-size: 12px; font-weight: 800; color: var(--green-light);
   text-shadow: 0 1px 4px rgba(0,0,0,0.8);
   padding: 3px 10px; background: rgba(0,0,0,0.6); border-radius: 12px;
@@ -329,7 +322,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
       </div>
 
       <div class="vault-container">
-        <div class="vault-pct-display" id="vault-pct">—%</div>
         <div class="vault">
           <div class="vault-scale">
             <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
@@ -338,7 +330,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
           <div class="vault-fill-line" id="vault-fill-line"></div>
           <div class="vault-bags" id="vault-bags"></div>
         </div>
-        <div class="vault-label">STAKING POOL</div>
+        <div class="vault-label">STAKING POOL <span class="vault-pct" id="vault-pct">—%</span></div>
       </div>
     </div>
 
@@ -415,7 +407,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   const EQUITY = new Date('2027-03-23T00:00:00Z').getTime();
   const TOTAL_DURATION = EQUITY - TGE;
   const VAULT_MAX_BAGS = 60;
-  const PORTER_WALK_MS = 3000;
+  const PORTER_WALK_MS = 3500;
   const FALLBACK_TOTAL = 145383478;
 
   const state = {
@@ -498,26 +490,37 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     state.visibleBags = targetBags;
   }
 
-  function porterSvg(){
-    return `<div class="porter-bob"><svg width="92" height="110" viewBox="0 0 100 130" style="overflow:visible;">
-      <rect class="leg-b" x="40" y="100" width="11" height="24" rx="3" fill="#7f1d1d"/>
-      <ellipse cx="45" cy="125" rx="9" ry="3" fill="#1a0606"/>
-      <g><rect x="18" y="48" width="36" height="46" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="20" y="42" width="5" height="12" rx="1.5" fill="#7f1d1d"/><rect x="22" y="68" width="28" height="18" rx="3" fill="#991b1b"/><text x="36" y="82" text-anchor="middle" fill="#fef2f2" font-size="11" font-weight="700">BP</text><rect x="18" y="48" width="36" height="6" rx="3" fill="#7f1d1d"/></g>
-      <ellipse cx="58" cy="80" rx="22" ry="26" fill="#dc2626"/>
-      <ellipse cx="58" cy="80" rx="14" ry="18" fill="#ef4444" opacity="0.45"/>
-      <path d="M 50 38 L 70 38 L 64 60 L 56 60 Z" fill="#7f1d1d" opacity="0.7"/>
-      <path d="M 52 60 Q 56 65 60 78" stroke="#7f1d1d" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
-      <circle cx="62" cy="38" r="22" fill="#fca5a5"/>
-      <circle cx="62" cy="34" r="22" fill="#fecaca" opacity="0.45"/>
-      <circle cx="48" cy="38" r="4" fill="#fca5a5"/>
-      <ellipse cx="70" cy="40" rx="3.5" ry="5" fill="#1f1010"/>
-      <circle cx="71" cy="38" r="1.3" fill="#fff"/>
-      <circle cx="76" cy="48" r="3" fill="#ef4444" opacity="0.6"/>
-      <path d="M 72 50 Q 76 54 78 50" stroke="#1f1010" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <path d="M 65 70 Q 78 78 72 95" stroke="#fca5a5" stroke-width="9" fill="none" stroke-linecap="round"/>
-      <circle cx="72" cy="95" r="6" fill="#fca5a5"/>
-      <rect class="leg-f" x="56" y="100" width="11" height="24" rx="3" fill="#7f1d1d"/>
-      <ellipse cx="61" cy="125" rx="9" ry="3" fill="#1a0606"/>
+  function chihuahuaSvg(){
+    return `<div class="porter-bob"><svg width="120" height="100" viewBox="0 0 140 110" style="overflow:visible;">
+      <path d="M 78 28 L 75 4 L 92 18 Z" fill="#a07a55" stroke="#7a5837" stroke-width="0.5"/>
+      <path d="M 81 22 L 80 12 L 89 19 Z" fill="#f87171" opacity="0.65"/>
+      <rect class="leg-b" x="38" y="80" width="9" height="22" rx="2" fill="#a07a55"/>
+      <ellipse cx="42" cy="102" rx="7" ry="2.5" fill="#1a0606"/>
+      <path d="M 26 64 Q 12 54 16 38 Q 22 32 30 38" stroke="#c19a6b" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <ellipse cx="55" cy="68" rx="32" ry="20" fill="#c19a6b"/>
+      <ellipse cx="58" cy="74" rx="24" ry="11" fill="#d4b486" opacity="0.5"/>
+      <g>
+        <rect x="32" y="44" width="42" height="24" rx="5" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>
+        <rect x="36" y="38" width="5" height="10" rx="1.5" fill="#7f1d1d"/>
+        <rect x="42" y="54" width="22" height="12" rx="2" fill="#991b1b"/>
+        <text x="53" y="63" text-anchor="middle" fill="#fef2f2" font-size="10" font-weight="700">BP</text>
+        <path d="M 36 50 Q 30 60 32 66" stroke="#7f1d1d" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+        <path d="M 70 50 Q 76 60 74 66" stroke="#7f1d1d" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+      </g>
+      <ellipse cx="86" cy="56" rx="12" ry="14" fill="#c19a6b"/>
+      <circle cx="100" cy="40" r="20" fill="#c19a6b"/>
+      <ellipse cx="100" cy="34" rx="15" ry="10" fill="#d4b486" opacity="0.45"/>
+      <path d="M 102 24 L 110 2 L 118 20 Z" fill="#c19a6b" stroke="#8b6f47" stroke-width="0.5"/>
+      <path d="M 105 21 L 110 8 L 115 20 Z" fill="#f87171" opacity="0.7"/>
+      <ellipse cx="118" cy="46" rx="11" ry="7.5" fill="#d4b486"/>
+      <ellipse cx="125" cy="44" rx="3.5" ry="3" fill="#1f1010"/>
+      <path d="M 117 51 Q 121 54 125 51" stroke="#1f1010" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="121" cy="53" rx="3" ry="1.8" fill="#f87171"/>
+      <ellipse cx="103" cy="40" rx="5.5" ry="6.5" fill="#1f1010"/>
+      <circle cx="104.5" cy="38" r="2" fill="#fff"/>
+      <circle cx="101" cy="42" r="0.9" fill="#fff"/>
+      <rect class="leg-f" x="68" y="80" width="9" height="22" rx="2" fill="#a07a55"/>
+      <ellipse cx="72" cy="102" rx="7" ry="2.5" fill="#1a0606"/>
     </svg></div>`;
   }
 
@@ -527,7 +530,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     porter.className = 'porter';
     porter.style.setProperty('--dur', PORTER_WALK_MS + 'ms');
     const labelClass = amount >= 500000 ? 'porter-amount mega' : 'porter-amount';
-    porter.innerHTML = porterSvg() + `<div class="${labelClass}">+${fmtCompact(amount)} BP</div>`;
+    porter.innerHTML = chihuahuaSvg() + `<div class="${labelClass}">+${fmtCompact(amount)} BP</div>`;
     stage.appendChild(porter);
     setTimeout(() => {
       state.deliveries++;
@@ -715,6 +718,20 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     updateVaultFill(pct, false);
   }
 
+  function spawnDemoChihuahua(){
+    const demoAmount = 1234 + Math.floor(Math.random() * 4000);
+    const stage = document.getElementById('stage');
+    const porter = document.createElement('div');
+    porter.className = 'porter';
+    porter.style.setProperty('--dur', PORTER_WALK_MS + 'ms');
+    porter.innerHTML = chihuahuaSvg() + `<div class="porter-amount" style="opacity:0.7;">demo · +${fmtCompact(demoAmount)} BP</div>`;
+    stage.appendChild(porter);
+    setTimeout(() => {
+      porter.classList.add('gone');
+      setTimeout(() => porter.remove(), 500);
+    }, PORTER_WALK_MS);
+  }
+
   function init(){
     buildSourcePile();
     setupChartTabs();
@@ -727,6 +744,8 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     setInterval(fetchTicker, 30000);
     setInterval(fetchPriceChart, 120000);
     setInterval(updateCountdown, 60000);
+    setTimeout(spawnDemoChihuahua, 1500);
+    setTimeout(spawnDemoChihuahua, 6500);
   }
 
   if (document.readyState === 'loading') {
