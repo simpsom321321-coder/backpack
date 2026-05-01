@@ -85,14 +85,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .hero-num.flash { color: var(--green-light); transform: scale(1.04); text-shadow: 0 4px 24px rgba(74,222,128,0.6); }
 .hero-num.flash-down { color: var(--red-400); transform: scale(0.97); }
 .hero-label { font-size: 11px; color: var(--red-300); margin-top: 6px; letter-spacing: 2px; font-weight: 700; }
-.pct-badge {
-  display: inline-block; margin-top: 10px;
-  background: rgba(220,38,38,0.2); border: 1.5px solid rgba(220,38,38,0.4);
-  border-radius: 16px; padding: 6px 16px;
-  font-size: 16px; font-weight: 800; color: var(--red-300);
-  font-variant-numeric: tabular-nums; transition: all 0.4s;
-}
-.pct-badge.flash { background: rgba(74,222,128,0.2); border-color: rgba(74,222,128,0.5); color: var(--green-light); }
 .session-card {
   position: absolute; top: 24px; right: 24px; z-index: 10;
   background: rgba(0,0,0,0.5); border: 1px solid rgba(220,38,38,0.3);
@@ -106,7 +98,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   position: absolute; bottom: 70px; left: 24px; width: 140px; height: 220px; z-index: 2;
 }
 .source-pile { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 110px; height: 100px; }
-.source-pile svg { position: absolute; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+.source-pile svg { position: absolute; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); width: 36px; height: 32px; }
 .source-label {
   position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
   font-size: 11px; color: var(--red-300); opacity: 0.85; white-space: nowrap;
@@ -159,6 +151,8 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .vault-bag {
   width: 50px; height: 45px; margin: 0 -4px -8px 0;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
+.vault-bag.dropped {
   animation: vbagDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes vbagDrop {
@@ -166,16 +160,11 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   60% { transform: translateY(4px) scale(1.05); opacity: 1; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
-.vault-bag.removing { animation: vbagOut 0.4s ease-out forwards; }
-@keyframes vbagOut {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(-15px) scale(0.6); opacity: 0; }
-}
 .vault-scale {
   position: absolute; right: -36px; top: 0; bottom: 0;
   display: flex; flex-direction: column; justify-content: space-between;
   font-size: 10px; color: var(--red-300); opacity: 0.6; padding: 4px 0;
-  font-variant-numeric: tabular-nums; font-weight: 600;
+  font-variant-numeric: tabular-nums; font-weight: 600; z-index: 6;
 }
 .vault-scale span { line-height: 1; }
 .vault-label {
@@ -427,17 +416,16 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   const TOTAL_DURATION = EQUITY - TGE;
   const VAULT_MAX_BAGS = 60;
   const PORTER_WALK_MS = 3000;
+  const FALLBACK_TOTAL = 145383478;
 
   const state = {
     lastTotal: null, sessionAdd: 0, sessionEvents: 0, deliveries: 0,
     currentPrice: null, chart: null, chartMode: 'price',
     priceData: null, stakingHistory: [], visibleBags: 0,
-    maxFeed: 30
+    firstApiResponse: false, maxFeed: 30
   };
 
   const bagSvg = `<svg viewBox="0 0 60 56" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="40" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="6" y="12" width="48" height="40" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="14" y="28" width="32" height="18" rx="4" fill="#991b1b"/><text x="30" y="40" text-anchor="middle" fill="#fef2f2" font-size="8" font-weight="700">BP</text><rect x="6" y="12" width="48" height="6" rx="3" fill="#7f1d1d"/></svg>`;
-
-  const sourceBagSvg = `<svg viewBox="0 0 60 56"><rect x="14" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="40" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="6" y="12" width="48" height="40" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="14" y="28" width="32" height="18" rx="4" fill="#991b1b"/><text x="30" y="40" text-anchor="middle" fill="#fef2f2" font-size="8" font-weight="700">BP</text><rect x="6" y="12" width="48" height="6" rx="3" fill="#7f1d1d"/></svg>`;
 
   function fmtMoney(n){
     if(n==null||isNaN(n)) return '—';
@@ -462,7 +450,8 @@ header { display: flex; justify-content: space-between; align-items: center; mar
       [16, 22], [48, 22],
       [32, 44]
     ];
-    pile.innerHTML = positions.map(([x, y]) => `<svg style="left:${x}px; bottom:${y}px; width:36px; height:32px; position:absolute;" viewBox="0 0 60 56">${sourceBagSvg.replace(/<svg[^>]*>|<\/svg>/g, '')}</svg>`).join('');
+    const inner = bagSvg.replace(/<svg[^>]*>|<\/svg>/g, '');
+    pile.innerHTML = positions.map(([x, y]) => `<svg style="left:${x}px; bottom:${y}px;" viewBox="0 0 60 56">${inner}</svg>`).join('');
   }
 
   function dropConfetti(count){
@@ -480,7 +469,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     }
   }
 
-  function updateVaultFill(pct){
+  function updateVaultFill(pct, animated){
     const targetBags = Math.round(VAULT_MAX_BAGS * pct / 100);
     const bagsContainer = document.getElementById('vault-bags');
     const fillBar = document.getElementById('vault-fill-bar');
@@ -495,24 +484,15 @@ header { display: flex; justify-content: space-between; align-items: center; mar
       const toAdd = targetBags - state.visibleBags;
       for (let i = 0; i < toAdd; i++){
         const bag = document.createElement('div');
-        bag.className = 'vault-bag';
+        bag.className = 'vault-bag' + (animated ? ' dropped' : '');
         bag.innerHTML = bagSvg;
-        bag.style.animationDelay = (i * 0.05) + 's';
+        if (animated) bag.style.animationDelay = (i * 0.05) + 's';
         bagsContainer.insertBefore(bag, bagsContainer.firstChild);
       }
     } else if (targetBags < state.visibleBags){
       const toRemove = state.visibleBags - targetBags;
       for (let i = 0; i < toRemove; i++){
-        const first = bagsContainer.firstChild;
-        if (!first) break;
-        first.classList.add('removing');
-        setTimeout(((el) => () => { if (el.parentNode) el.parentNode.removeChild(el); })(first), 400);
-        bagsContainer.removeChild(first);
-        const placeholder = document.createElement('div');
-        placeholder.className = 'vault-bag removing';
-        placeholder.innerHTML = bagSvg;
-        bagsContainer.insertBefore(placeholder, bagsContainer.firstChild);
-        setTimeout(((el) => () => { if (el.parentNode) el.parentNode.removeChild(el); })(placeholder), 400);
+        if (bagsContainer.firstChild) bagsContainer.removeChild(bagsContainer.firstChild);
       }
     }
     state.visibleBags = targetBags;
@@ -585,14 +565,15 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 
   async function fetchStaking(){
     try {
-      const r = await fetch('https://api.backpack.exchange/wapi/v1/staking/stats');
-      if (!r.ok) throw new Error();
+      const r = await fetch('/api/staking-stats');
+      if (!r.ok) throw new Error('http ' + r.status);
       const data = await r.json();
       const total = parseFloat(data.totalStakedBp);
-      const pct = (total / CIRC * 100);
+      if (isNaN(total)) throw new Error('bad data');
 
+      const pct = (total / CIRC * 100);
       document.getElementById('hero-total').textContent = fmtNum(total) + ' BP';
-      updateVaultFill(pct);
+      updateVaultFill(pct, state.firstApiResponse);
 
       if (state.currentPrice){
         document.getElementById('staked-value').textContent = fmtMoney(total * state.currentPrice);
@@ -601,7 +582,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
       state.stakingHistory.push({ t: Date.now(), v: total });
       if (state.stakingHistory.length > 200) state.stakingHistory.shift();
 
-      if (state.lastTotal !== null){
+      if (state.firstApiResponse && state.lastTotal !== null){
         const delta = total - state.lastTotal;
         if (Math.abs(delta) >= 0.01){
           if (delta > 0){
@@ -618,6 +599,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
         }
       }
       state.lastTotal = total;
+      state.firstApiResponse = true;
       document.getElementById('status-text').textContent = 'Connected · ' + new Date().toLocaleTimeString('en-US', { hour12: false });
     } catch(e){
       document.getElementById('status-text').textContent = 'Retrying...';
@@ -626,7 +608,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 
   async function fetchTicker(){
     try {
-      const r = await fetch('https://api.backpack.exchange/api/v1/ticker?symbol=BP_USDC');
+      const r = await fetch('/api/ticker');
       if (!r.ok) return;
       const t = await r.json();
       const price = parseFloat(t.lastPrice);
@@ -653,14 +635,10 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   async function fetchPriceChart(){
     try {
       const startSec = Math.floor((Date.now() - 24*60*60*1000) / 1000);
-      let r = await fetch('https://api.backpack.exchange/api/v1/klines?symbol=BP_USDC&interval=1h&startTime=' + startSec);
-      let klines = r.ok ? await r.json() : null;
-      if (!klines || !klines.length){
-        const startMs = Date.now() - 24*60*60*1000;
-        r = await fetch('https://api.backpack.exchange/api/v1/klines?symbol=BP_USDC&interval=1h&startTime=' + startMs);
-        klines = r.ok ? await r.json() : [];
-      }
-      if (!klines.length) return;
+      const r = await fetch('/api/klines?startTime=' + startSec);
+      if (!r.ok) return;
+      const klines = await r.json();
+      if (!Array.isArray(klines) || !klines.length) return;
       state.priceData = {
         labels: klines.map(k => {
           const t = k.start || k[0];
@@ -731,9 +709,16 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     document.getElementById('equity-progress').style.width = Math.max(0.5, progress) + '%';
   }
 
+  function preFillVault(){
+    const pct = FALLBACK_TOTAL / CIRC * 100;
+    document.getElementById('hero-total').textContent = fmtNum(FALLBACK_TOTAL) + ' BP';
+    updateVaultFill(pct, false);
+  }
+
   function init(){
     buildSourcePile();
     setupChartTabs();
+    preFillVault();
     fetchStaking();
     fetchTicker();
     fetchPriceChart();
