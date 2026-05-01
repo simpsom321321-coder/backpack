@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bagman · Live BP Staking Tracker</title>
+<title>BP Staking Tracker · Live</title>
 <meta name="description" content="Real-time visualization of $BP staking on Backpack Exchange. Watch chihuahuas carry bags into the staking vault.">
-<meta property="og:title" content="Bagman · Live BP Staking Tracker">
-<meta property="og:description" content="Watch chihuahuas carry $BP into the staking vault, live.">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -27,16 +25,7 @@ body::before {
   pointer-events: none; z-index: 0;
 }
 .container { max-width: 1400px; margin: 0 auto; padding: 24px; position: relative; z-index: 1; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-.brand { display: flex; align-items: center; gap: 14px; }
-.brand-logo {
-  width: 52px; height: 52px;
-  background: linear-gradient(135deg, var(--red-600), var(--red-800));
-  border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 20px rgba(220,38,38,0.4);
-}
-.brand-text h1 { font-size: 24px; font-weight: 800; color: var(--red-50); margin-bottom: 2px; letter-spacing: -0.5px; }
-.brand-text p { font-size: 12px; color: var(--red-300); letter-spacing: 0.5px; }
+.topbar { display: flex; justify-content: flex-end; margin-bottom: 20px; }
 .live-badge {
   display: flex; align-items: center; gap: 8px;
   background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.4);
@@ -85,14 +74,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .hero-num.flash { color: var(--green-light); transform: scale(1.04); text-shadow: 0 4px 24px rgba(74,222,128,0.6); }
 .hero-num.flash-down { color: var(--red-400); transform: scale(0.97); }
 .hero-label { font-size: 11px; color: var(--red-300); margin-top: 6px; letter-spacing: 2px; font-weight: 700; }
-.session-card {
-  position: absolute; top: 24px; right: 24px; z-index: 10;
-  background: rgba(0,0,0,0.5); border: 1px solid rgba(220,38,38,0.3);
-  border-radius: 12px; padding: 12px 16px; min-width: 170px; backdrop-filter: blur(8px);
-}
-.session-card .row { display: flex; justify-content: space-between; font-size: 11px; color: var(--red-300); margin-bottom: 5px; gap: 12px; }
-.session-card .row:last-child { margin-bottom: 0; }
-.session-card strong { color: var(--red-50); font-weight: 800; font-size: 13px; }
 
 .source-area {
   position: absolute; bottom: 70px; left: 24px; width: 140px; height: 220px; z-index: 2;
@@ -134,12 +115,19 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 }
 .vault-bags {
   position: absolute; bottom: 8px; left: 8px; right: 8px;
-  display: flex; flex-direction: column-reverse; flex-wrap: wrap-reverse;
-  align-items: flex-start; max-height: calc(100% - 16px); z-index: 2;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+  align-content: flex-end;
+  justify-content: center;
+  max-height: calc(100% - 16px);
+  z-index: 2;
   pointer-events: none;
 }
 .vault-bag {
-  width: 50px; height: 45px; margin: 0 -4px -8px 0;
+  width: 46px; height: 40px;
+  margin: 1px;
+  flex-shrink: 0;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
 }
 .vault-bag.dropped { animation: vbagDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -196,6 +184,18 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 .porter-amount.mega {
   color: var(--red-50); background: linear-gradient(90deg, var(--red-600), var(--red-400));
   border-color: var(--red-200); font-size: 13px;
+}
+.porter-speech {
+  position: absolute; top: -32px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; font-size: 13px; font-weight: 800; color: #1a0606;
+  padding: 7px 14px; background: #fef2f2; border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.5); letter-spacing: 0.3px;
+}
+.porter-speech::after {
+  content: ''; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 8px solid transparent; border-right: 8px solid transparent;
+  border-top: 8px solid #fef2f2;
 }
 
 .confetti {
@@ -279,39 +279,18 @@ header { display: flex; justify-content: space-between; align-items: center; mar
 <body>
 
 <div class="container">
-  <header>
-    <div class="brand">
-      <div class="brand-logo">
-        <svg width="32" height="32" viewBox="0 0 60 56">
-          <rect x="14" y="2" width="6" height="14" rx="2" fill="#fee2e2"/>
-          <rect x="40" y="2" width="6" height="14" rx="2" fill="#fee2e2"/>
-          <rect x="6" y="12" width="48" height="40" rx="6" fill="#fee2e2"/>
-          <rect x="14" y="28" width="32" height="18" rx="4" fill="#dc2626"/>
-          <text x="30" y="40" text-anchor="middle" fill="#fee2e2" font-size="9" font-weight="700">BP</text>
-          <rect x="6" y="12" width="48" height="6" rx="3" fill="#fee2e2"/>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <h1>BAGMAN</h1>
-        <p>LIVE BP STAKING TRACKER · BACKPACK EXCHANGE</p>
-      </div>
-    </div>
+  <div class="topbar">
     <div class="live-badge">
       <span class="pulse"></span>
       <span id="status-text">Connecting...</span>
     </div>
-  </header>
+  </div>
 
   <div class="main-grid">
     <div class="stage" id="stage">
       <div class="hero-block">
         <div class="hero-num" id="hero-total">—</div>
         <div class="hero-label">TOTAL STAKED BP</div>
-      </div>
-      <div class="session-card">
-        <div class="row"><span>SESSION</span><strong id="session-add">+0 BP</strong></div>
-        <div class="row"><span>EVENTS</span><strong id="session-events">0</strong></div>
-        <div class="row"><span>DELIVERED</span><strong id="session-bags">0</strong></div>
       </div>
 
       <div class="stage-floor"></div>
@@ -411,10 +390,9 @@ header { display: flex; justify-content: space-between; align-items: center; mar
   const FALLBACK_TOTAL = 145383478;
 
   const state = {
-    lastTotal: null, sessionAdd: 0, sessionEvents: 0, deliveries: 0,
-    currentPrice: null, chart: null, chartMode: 'price',
+    lastTotal: null, currentPrice: null, chart: null, chartMode: 'price',
     priceData: null, stakingHistory: [], visibleBags: 0,
-    firstApiResponse: false, maxFeed: 30
+    firstApiResponse: false, sessionEvents: 0, maxFeed: 30
   };
 
   const bagSvg = `<svg viewBox="0 0 60 56" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="40" y="2" width="6" height="14" rx="2" fill="#7f1d1d"/><rect x="6" y="12" width="48" height="40" rx="6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/><rect x="14" y="28" width="32" height="18" rx="4" fill="#991b1b"/><text x="30" y="40" text-anchor="middle" fill="#fef2f2" font-size="8" font-weight="700">BP</text><rect x="6" y="12" width="48" height="6" rx="3" fill="#7f1d1d"/></svg>`;
@@ -479,12 +457,12 @@ header { display: flex; justify-content: space-between; align-items: center; mar
         bag.className = 'vault-bag' + (animated ? ' dropped' : '');
         bag.innerHTML = bagSvg;
         if (animated) bag.style.animationDelay = (i * 0.05) + 's';
-        bagsContainer.insertBefore(bag, bagsContainer.firstChild);
+        bagsContainer.appendChild(bag);
       }
     } else if (targetBags < state.visibleBags){
       const toRemove = state.visibleBags - targetBags;
       for (let i = 0; i < toRemove; i++){
-        if (bagsContainer.firstChild) bagsContainer.removeChild(bagsContainer.firstChild);
+        if (bagsContainer.lastChild) bagsContainer.removeChild(bagsContainer.lastChild);
       }
     }
     state.visibleBags = targetBags;
@@ -533,10 +511,21 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     porter.innerHTML = chihuahuaSvg() + `<div class="${labelClass}">+${fmtCompact(amount)} BP</div>`;
     stage.appendChild(porter);
     setTimeout(() => {
-      state.deliveries++;
-      document.getElementById('session-bags').textContent = state.deliveries.toLocaleString('en-US');
       porter.classList.add('gone');
       if (amount >= 500000) dropConfetti(60);
+      setTimeout(() => porter.remove(), 500);
+    }, PORTER_WALK_MS);
+  }
+
+  function spawnGreetingChihuahua(){
+    const stage = document.getElementById('stage');
+    const porter = document.createElement('div');
+    porter.className = 'porter';
+    porter.style.setProperty('--dur', PORTER_WALK_MS + 'ms');
+    porter.innerHTML = chihuahuaSvg() + `<div class="porter-speech">Hi Backpacker!</div>`;
+    stage.appendChild(porter);
+    setTimeout(() => {
+      porter.classList.add('gone');
       setTimeout(() => porter.remove(), 500);
     }, PORTER_WALK_MS);
   }
@@ -553,7 +542,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     while (feed.children.length > state.maxFeed) feed.removeChild(feed.lastChild);
 
     state.sessionEvents++;
-    document.getElementById('session-events').textContent = state.sessionEvents.toLocaleString('en-US');
     document.getElementById('feed-status').textContent = 'Active';
   }
 
@@ -589,8 +577,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
         const delta = total - state.lastTotal;
         if (Math.abs(delta) >= 0.01){
           if (delta > 0){
-            state.sessionAdd += delta;
-            document.getElementById('session-add').textContent = '+' + fmtNum(state.sessionAdd) + ' BP';
             spawnPorter(delta);
             addEvent(delta, true);
             flashHero(true);
@@ -718,20 +704,6 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     updateVaultFill(pct, false);
   }
 
-  function spawnDemoChihuahua(){
-    const demoAmount = 1234 + Math.floor(Math.random() * 4000);
-    const stage = document.getElementById('stage');
-    const porter = document.createElement('div');
-    porter.className = 'porter';
-    porter.style.setProperty('--dur', PORTER_WALK_MS + 'ms');
-    porter.innerHTML = chihuahuaSvg() + `<div class="porter-amount" style="opacity:0.7;">demo · +${fmtCompact(demoAmount)} BP</div>`;
-    stage.appendChild(porter);
-    setTimeout(() => {
-      porter.classList.add('gone');
-      setTimeout(() => porter.remove(), 500);
-    }, PORTER_WALK_MS);
-  }
-
   function init(){
     buildSourcePile();
     setupChartTabs();
@@ -744,8 +716,8 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     setInterval(fetchTicker, 30000);
     setInterval(fetchPriceChart, 120000);
     setInterval(updateCountdown, 60000);
-    setTimeout(spawnDemoChihuahua, 1500);
-    setTimeout(spawnDemoChihuahua, 6500);
+    setTimeout(spawnGreetingChihuahua, 1500);
+    setTimeout(spawnGreetingChihuahua, 8000);
   }
 
   if (document.readyState === 'loading') {
